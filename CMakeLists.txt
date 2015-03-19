@@ -7,7 +7,7 @@ PROJECT( EUDAQ )
 # project version
 SET( ${PROJECT_NAME}_VERSION_MAJOR 1 )
 SET( ${PROJECT_NAME}_VERSION_MINOR 4 )
-SET( ${PROJECT_NAME}_VERSION_PATCH 3 )
+SET( ${PROJECT_NAME}_VERSION_PATCH 4 )
 
 LIST ( APPEND CMAKE_CXX_FLAGS "-fPIC -O2" )
 LIST ( APPEND CMAKE_LD_FLAGS "-fPIC -O2" )
@@ -137,7 +137,7 @@ IF(BUILD_main)
 ENDIF()
 
 # build EUDAQ python exe bindings
-option(BUILD_python "Compile Python EUDAQ binding library?" ON)
+option(BUILD_python "Compile Python EUDAQ binding library?" OFF)
 IF(BUILD_python)
   add_subdirectory(main/python)
 ENDIF()

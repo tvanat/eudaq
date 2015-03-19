@@ -36,8 +36,6 @@ public:
   void ReadoutLoop();
   virtual ~DRS4PProducer();
 private:
-  unsigned m_run, m_ev, m_ev_filled, m_ev_runningavg_filled;
-  bool m_terminated, m_running, triggering;
   std::string m_verbosity, m_producerName;
   unsigned NumOfChan, NumOfSil, NumOfADC;
   eudaq::Configuration m_config;

@@ -32,7 +32,7 @@ void DRS4PProducer::OnConfigure(const eudaq::Configuration& conf) {
 	m_drs = new DRS();
 
 	/* show any found board(s) */
-	for (i=0 ; i<m_drs->GetNumberOfBoards() ; i++) {
+	for (size_t i=0 ; i<m_drs->GetNumberOfBoards() ; i++) {
 		m_b = m_drs->GetBoard(i);
 		printf("Found DRS4 evaluation board, serial #%d, firmware revision %d\n",
 				m_b->GetBoardSerialNumber(), m_b->GetFirmwareVersion());
@@ -67,7 +67,7 @@ void DRS4PProducer::OnConfigure(const eudaq::Configuration& conf) {
 	if (m_b->GetBoardType() >= 8) {        // Evaluation Board V4&5
 		m_b->EnableTrigger(1, 0);           // enable hardware trigger
 		m_b->SetTriggerSource(1<<0);        // set CH1 as source
-	} else if (b->GetBoardType() == 7) { // Evaluation Board V3
+	} else if (m_b->GetBoardType() == 7) { // Evaluation Board V3
 		m_b->EnableTrigger(0, 1);           // lemo off, analog trigger on
 		m_b->SetTriggerSource(0);           // use CH1 as source
 	}
@@ -79,13 +79,13 @@ void DRS4PProducer::OnConfigure(const eudaq::Configuration& conf) {
 int main(int /*argc*/, const char ** argv) {
   // You can use the OptionParser to get command-line arguments
   // then they will automatically be described in the help (-h) option
-  eudaq::OptionParser op("CMS Pixel Producer", "0.0",
+  eudaq::OptionParser op("DRS4 Producer", "0.0",
 			 "Run options");
   eudaq::Option<std::string> rctrl(op, "r", "runcontrol",
 				   "tcp://localhost:44000", "address", "The address of the RunControl.");
   eudaq::Option<std::string> level(op, "l", "log-level", "NONE", "level",
 				   "The minimum level for displaying log messages locally");
-  eudaq::Option<std::string> name (op, "n", "name", "CMSPixel", "string",
+  eudaq::Option<std::string> name (op, "n", "name", "DRS4", "string",
 				   "The name of this Producer");
   eudaq::Option<std::string> verbosity(op, "v", "verbosity mode", "INFO", "string");
   try {

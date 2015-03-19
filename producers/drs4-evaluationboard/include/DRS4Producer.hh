@@ -1,5 +1,5 @@
 #ifndef DRS4PRODUCER_HH
-#define DRS4PIXELPRODUCER_HH
+#define DRS4PRODUCER_HH
 
 #include <stdio.h>
 #include <string.h>
@@ -26,16 +26,18 @@ using namespace std;
 
 #define EventLength 1280*3 + 20 + 256 + 10
 
-class DRS4PProducer : public eudaq::Producer {
+class DRS4Producer : public eudaq::Producer {
+
 public:
-  DRS4PProducer(const std::string & name, const std::string & runcontrol, const std::string & verbosity);
+  DRS4Producer(const std::string & name, const std::string & runcontrol, const std::string & verbosity);
   virtual void OnConfigure(const eudaq::Configuration & config);
   virtual void OnStartRun(unsigned runnumber);
   virtual void OnStopRun();
   virtual void OnTerminate();
   void ReadoutLoop();
-  virtual ~DRS4PProducer();
+
 private:
+  unsigned m_run, m_ev;
   std::string m_verbosity, m_producerName;
   unsigned NumOfChan, NumOfSil, NumOfADC;
   eudaq::Configuration m_config;

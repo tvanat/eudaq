@@ -7,7 +7,7 @@
 #include "eudaq/Configuration.hh"
 
 // pxarCore includes:
-#include "api.h"
+#include "DRS.h"
 
 // system includes:
 #include <iostream>

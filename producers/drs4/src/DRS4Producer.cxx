@@ -29,6 +29,7 @@ DRS4Producer::DRS4Producer(const std::string & name, const std::string & runcont
 	cout<<"Started DRS4Producer with Name: "<<name<<endl;
 	m_b = 0;
 	m_drs = 0;
+	cout<<"Type:"<<m_event_type<<endl;
 }
 
 void DRS4Producer::OnStartRun(unsigned runnumber) {
@@ -39,17 +40,17 @@ void DRS4Producer::OnStartRun(unsigned runnumber) {
 		std::cout<<"Create event"<<m_event_type<<" "<<m_run<<std::endl;
 		eudaq::RawDataEvent bore(eudaq::RawDataEvent::BORE(m_event_type, m_run));
 		std::cout << "drs4 board"<<std::endl;
-		bore.SetTag("DRS4_BOARD", std::to_string(m_b->GetBoardSerialNumber()));
-
-		// Set Firmware name
-		std::cout << "Set tag fw"<<std::endl;
-		bore.SetTag("DRS4_FW", std::to_string(m_b->GetFirmwareVersion()));
-		// Set Names for different channels
-		for (int ch = 0; ch < n_channels; ch++){
-			string tag = "CH_%d"+std::to_string(ch);
-			std::cout << "Set tag"<<tag<<std::endl;
-			bore.SetTag(tag, "BLA");
-		}
+//		bore.SetTag("DRS4_BOARD", std::to_string(m_b->GetBoardSerialNumber()));
+//
+//		// Set Firmware name
+//		std::cout << "Set tag fw"<<std::endl;
+//		bore.SetTag("DRS4_FW", std::to_string(m_b->GetFirmwareVersion()));
+//		// Set Names for different channels
+//		for (int ch = 0; ch < n_channels; ch++){
+//			string tag = "CH_%d"+std::to_string(ch);
+//			std::cout << "Set tag"<<tag<<std::endl;
+//			bore.SetTag(tag, "BLA");
+//		}
 		std::cout << "Send event"<<std::endl;
 		// Send the event out:
 		SendEvent(bore);
@@ -59,7 +60,8 @@ void DRS4Producer::OnStartRun(unsigned runnumber) {
 		SetStatus(eudaq::Status::LVL_OK, "Running");
 		m_running = true;
 		/* Start Readout */
-		m_b->StartDomino();
+		if (m_b)
+			m_b->StartDomino();
 	}
 	catch (...){
 		EUDAQ_ERROR(string("Unknown exception."));

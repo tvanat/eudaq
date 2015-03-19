@@ -14,6 +14,7 @@
 #include <ostream>
 #include <vector>
 #include <mutex>
+
 DRS4Producer::DRS4Producer(const std::string & name, const std::string & runcontrol, const std::string & verbosity)  : eudaq::Producer(name, runcontrol),
 m_run(0),
 m_ev(0),
@@ -95,7 +96,7 @@ int main(int /*argc*/, const char ** argv) {
     // Set the Log level for displaying messages based on command-line
     EUDAQ_LOG_LEVEL(level.Value());
     // Create a producer
-    DRS4PixelProducer producer(name.Value(), rctrl.Value(), verbosity.Value());
+    DRS4Producer producer(name.Value(), rctrl.Value(), verbosity.Value());
     // And set it running...
     producer.ReadoutLoop();
     // When the readout loop terminates, it is time to go

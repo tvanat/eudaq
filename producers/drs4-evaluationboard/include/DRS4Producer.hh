@@ -18,11 +18,6 @@
 #include <vector>
 using namespace std;
 
-#define NumOfCha 1280
-#define NumOfSi 3
-#define BuffSize NumOfCha*NumOfSi
-
-#define EventLength 1280*3 + 20 + 256 + 10
 
 class DRS4Producer {
 public:

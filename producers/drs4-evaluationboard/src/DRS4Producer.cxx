@@ -6,8 +6,7 @@
 #include "eudaq/Timer.hh"
 #include "eudaq/Configuration.hh"
 
-// pxarCore includes:
-#include "api.h"
+#include "DRS4Producer.hh"
 
 // system includes:
 #include <iostream>

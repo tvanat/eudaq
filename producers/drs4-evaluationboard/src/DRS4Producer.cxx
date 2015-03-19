@@ -14,19 +14,22 @@
 #include <ostream>
 #include <vector>
 #include <mutex>
-DRS4PProducer::DRS4PProducer(const std::string & name, const std::string & runcontrol, const std::string & verbosity)  : eudaq::Producer(name, runcontrol),
+#include <string>
+
+
+DRS4Producer::DRS4Producer(const std::string & name, const std::string & runcontrol, const std::string & verbosity)  : eudaq::Producer(name, runcontrol),
 m_run(0),
 m_ev(0),
-m_ev_filled(0),
-m_ev_runningavg_filled(0),
-m_terminated(false),
-m_running(false),
-triggering(false),
 m_producerName(name){
 
 }
 
-void DRS4PProducer::OnConfigure(const eudaq::Configuration& conf) {
+void DRS4Producer::OnStartRun(unsigned runnumber) {};
+void DRS4Producer::OnStopRun() {};
+void DRS4Producer::OnTerminate() {};
+void DRS4Producer::ReadoutLoop() {};
+
+void DRS4Producer::OnConfigure(const eudaq::Configuration& conf) {
 
 	m_config = conf;
 	/* do initial scan */
@@ -95,7 +98,7 @@ int main(int /*argc*/, const char ** argv) {
     // Set the Log level for displaying messages based on command-line
     EUDAQ_LOG_LEVEL(level.Value());
     // Create a producer
-    DRS4PixelProducer producer(name.Value(), rctrl.Value(), verbosity.Value());
+    DRS4Producer producer(name.Value(), rctrl.Value(), verbosity.Value());
     // And set it running...
     producer.ReadoutLoop();
     // When the readout loop terminates, it is time to go

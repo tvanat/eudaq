@@ -38,7 +38,8 @@ public:
 
 private:
   unsigned m_run, m_ev;
-  std::string m_verbosity, m_producerName;
+  std::string m_verbosity, m_producerNamem,m_event_type, m_producerName;
+  bool m_terminated, m_running, triggering;;
   unsigned NumOfChan, NumOfSil, NumOfADC;
   eudaq::Configuration m_config;
   eudaq::Timer* m_t;

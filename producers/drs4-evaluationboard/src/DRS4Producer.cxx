@@ -14,7 +14,7 @@
 #include <ostream>
 #include <vector>
 #include <mutex>
-DRS4PProducer::DRS4PProducer(const std::string & name, const std::string & runcontrol, const std::string & verbosity)  : eudaq::Producer(name, runcontrol),
+DRS4Producer::DRS4Producer(const std::string & name, const std::string & runcontrol, const std::string & verbosity)  : eudaq::Producer(name, runcontrol),
 m_run(0),
 m_ev(0),
 m_ev_filled(0),
@@ -26,7 +26,7 @@ m_producerName(name){
 
 }
 
-void DRS4PProducer::OnConfigure(const eudaq::Configuration& conf) {
+void DRS4Producer::OnConfigure(const eudaq::Configuration& conf) {
 
 	m_config = conf;
 	/* do initial scan */

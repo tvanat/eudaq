@@ -24,15 +24,15 @@ using namespace std;
 
 #define EventLength 1280*3 + 20 + 256 + 10
 
-class DRS4PProducer {
+class DRS4Producer {
 public:
-  DRS4PProducer(const std::string & name, const std::string & runcontrol, const std::string & verbosity);
+  DRS4Producer(const std::string & name, const std::string & runcontrol, const std::string & verbosity);
   virtual void OnConfigure(const eudaq::Configuration & config);
   virtual void OnStartRun(unsigned runnumber);
   virtual void OnStopRun();
   virtual void OnTerminate();
   void ReadoutLoop();
-  virtual ~DRS4PProducer();
+  virtual ~DRS4Producer();
 private:
   unsigned m_run, m_ev, m_ev_filled, m_ev_runningavg_filled;
   bool m_terminated, m_running, triggering;

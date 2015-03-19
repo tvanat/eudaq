@@ -57,3 +57,6 @@ extern/libusb*
 # ignore OS files
 Thumbs.db
 *.lnk
+
+# ignoring cmake files
+CMakeFiles

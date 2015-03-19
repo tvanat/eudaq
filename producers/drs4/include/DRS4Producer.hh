@@ -20,14 +20,7 @@
 #include <vector>
 using namespace std;
 
-#define NumOfCha 1280
-#define NumOfSi 3
-#define BuffSize NumOfCha*NumOfSi
-
-#define EventLength 1280*3 + 20 + 256 + 10
-
-class DRS4Producer : public eudaq::Producer {
-
+class DRS4Producer {
 public:
   DRS4Producer(const std::string & name, const std::string & runcontrol, const std::string & verbosity);
   virtual void OnConfigure(const eudaq::Configuration & config);
@@ -35,7 +28,7 @@ public:
   virtual void OnStopRun();
   virtual void OnTerminate();
   void ReadoutLoop();
-
+  virtual ~DRS4Producer();
 private:
   unsigned m_run, m_ev;
   std::string m_verbosity, m_producerNamem,m_event_type, m_producerName;

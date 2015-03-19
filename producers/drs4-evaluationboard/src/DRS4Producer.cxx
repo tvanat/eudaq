@@ -1,6 +1,3 @@
-#ifndef DRS4PRODUCER_HH
-#define DRS4PRODUCER_HH
-
 // EUDAQ includes:
 #include "eudaq/Producer.hh"
 #include "eudaq/Timer.hh"
@@ -105,5 +102,3 @@ int main(int /*argc*/, const char ** argv) {
   }
   return 0;
 }
-
-#endif /*DRS4PRODUCER_HH*/

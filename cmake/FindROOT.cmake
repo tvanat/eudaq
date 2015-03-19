@@ -17,6 +17,7 @@ SET(ROOT_CONFIG_SEARCHPATH
   $ENV{ROOTSYS}/bin
   /opt/local/bin
   /root/bin
+  /usr/local/root/bin/
 )
 
 SET(ROOT_DEFINITIONS "")

@@ -26,7 +26,7 @@ using namespace std;
 
 #define EventLength 1280*3 + 20 + 256 + 10
 
-class DRS4PProducer {
+class DRS4PProducer : public eudaq::Producer {
 public:
   DRS4PProducer(const std::string & name, const std::string & runcontrol, const std::string & verbosity);
   virtual void OnConfigure(const eudaq::Configuration & config);

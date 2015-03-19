@@ -1,3 +1,5 @@
+#ifndef DRS4PRODUCER_HH
+#define DRS4PIXELPRODUCER_HH
 
 #include <stdio.h>
 #include <string.h>
@@ -45,3 +47,5 @@ private:
   float time_array[8][1024];
   float wave_array[8][1024];
 };
+
+#endif /*DRS4PRODUCER_HH*/

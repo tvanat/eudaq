@@ -18,9 +18,11 @@
 #include <sys/types.h>
 #include<sys/time.h>
 #include <vector>
+#include <time.h>
+
 using namespace std;
 
-class DRS4Producer {
+class DRS4Producer: public eudaq::Producer  {
 public:
   DRS4Producer(const std::string & name, const std::string & runcontrol, const std::string & verbosity);
   virtual void OnConfigure(const eudaq::Configuration & config);
@@ -28,7 +30,7 @@ public:
   virtual void OnStopRun();
   virtual void OnTerminate();
   void ReadoutLoop();
-  virtual ~DRS4Producer();
+//  virtual ~DRS4Producer();
 private:
   unsigned m_run, m_ev;
   std::string m_verbosity, m_producerNamem,m_event_type, m_producerName;
@@ -40,6 +42,7 @@ private:
   DRSBoard *m_b;
   float time_array[8][1024];
   float wave_array[8][1024];
+  int n_channels;
 };
 
 #endif /*DRS4PRODUCER_HH*/

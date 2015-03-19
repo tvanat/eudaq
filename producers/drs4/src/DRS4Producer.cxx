@@ -15,40 +15,87 @@
 #include <vector>
 #include <mutex>
 #include <string>
+#include <unistd.h>
 
 static const std::string EVENT_TYPE = "DRS4";
 
 DRS4Producer::DRS4Producer(const std::string & name, const std::string & runcontrol, const std::string & verbosity)  : eudaq::Producer(name, runcontrol),
-m_run(0),
-m_ev(0),
-m_producerName(name),
-m_event_type("DRS4"){
-
+		m_run(0),
+		m_ev(0),
+		m_producerName(name),
+		m_event_type("DRS4"){
+	m_t = new eudaq::Timer;
+	n_channels = 8;
+	cout<<"Started DRS4Producer with Name: "<<name<<endl;
+	m_b = 0;
+	m_drs = 0;
 }
 
-void DRS4Producer::OnStartRun(unsigned runnum_ber) {
+void DRS4Producer::OnStartRun(unsigned runnumber) {
+	m_run = runnumber;
+	m_ev = 0;
+	try{
+		std::cout << "Start Run: " << m_run << std::endl;
+		std::cout<<"Create event"<<m_event_type<<" "<<m_run<<std::endl;
+		eudaq::RawDataEvent bore(eudaq::RawDataEvent::BORE(m_event_type, m_run));
+		std::cout << "drs4 board"<<std::endl;
+		bore.SetTag("DRS4_BOARD", std::to_string(m_b->GetBoardSerialNumber()));
+
+		// Set Firmware name
+		std::cout << "Set tag fw"<<std::endl;
+		bore.SetTag("DRS4_FW", std::to_string(m_b->GetFirmwareVersion()));
+		// Set Names for different channels
+		for (int ch = 0; ch < n_channels; ch++){
+			string tag = "CH_%d"+std::to_string(ch);
+			std::cout << "Set tag"<<tag<<std::endl;
+			bore.SetTag(tag, "BLA");
+		}
+		std::cout << "Send event"<<std::endl;
+		// Send the event out:
+		SendEvent(bore);
+
+		std::cout << "BORE for DRS4 Board: (event type"<<m_event_type<<")"<<endl;
+
+		SetStatus(eudaq::Status::LVL_OK, "Running");
+		m_running = true;
+		/* Start Readout */
+		m_b->StartDomino();
+	}
+	catch (...){
+		EUDAQ_ERROR(string("Unknown exception."));
+		SetStatus(eudaq::Status::LVL_ERROR, "Unknown exception.");
+	}
 
 };
 void DRS4Producer::OnStopRun() {
+	// Break the readout loop
+	m_running = false;
+	std::cout << "Stopping Run" << std::endl;
 
-    std::cout << "Start Run: " << m_run << std::endl;
+	try {
 
-    eudaq::RawDataEvent bore(eudaq::RawDataEvent::BORE(m_event_type, m_run));
-    bore.SetTag("DRS4_BOARD", std::to_string(m_b->GetBoardSerialNumber()));
+		if (m_b->IsBusy()) {
+			m_b->SoftTrigger();
+			for (int i=0 ; i<10 && m_b->IsBusy() ; i++)
+				usleep(10);//todo not mt save
+		}
+		SetStatus(eudaq::Status::LVL_OK, "Stopped");
+	} catch ( ... ){
+		EUDAQ_ERROR(string("Unknown exception."));
+		SetStatus(eudaq::Status::LVL_ERROR, "Unknown exception.");
+	}
 
-    // Set the PCB mount type for correct coordinate transformation:
-    bore.SetTag("DRS4_FW", std::to_string(m_b->GetFirmwareVersion()));
-
-    // Send the event out:
-    SendEvent(bore);
-
-    std::cout << "BORE for DRS4 Board: (event type"<<m_event_type<<")"<<endl;
-
-	/* Start Readout */
-	m_b->StartDomino();
 };
 
-void DRS4Producer::OnTerminate() {};
+void DRS4Producer::OnTerminate() {
+	if (m_b){
+		if (m_b->IsBusy()) {
+			m_b->SoftTrigger();
+			for (int i=0 ; i<10 && m_b->IsBusy() ; i++)
+				usleep(10);//todo not mt save
+		}
+	}
+};
 
 void DRS4Producer::ReadoutLoop() {
 	while (!m_terminated) {
@@ -90,15 +137,15 @@ void DRS4Producer::ReadoutLoop() {
 				printf("\rEvent #%6d read successfully\n",m_ev);
 
 				eudaq::RawDataEvent ev(m_event_type, m_run, m_ev);
-//
-//				  float time_array[8][1024];
-//				  float wave_array[8][1024];
+				//
+				//				  float time_array[8][1024];
+				//				  float wave_array[8][1024];
 				ev.AddBlock(0, reinterpret_cast<const char*>(&time_array[0]), sizeof( time_array[0][0])*8*1024);
 				ev.AddBlock(0, reinterpret_cast<const char*>(&wave_array[0]), sizeof( wave_array[0][0])*8*1024);
 
 				SendEvent(ev);
 				m_ev++;
-//				if(daqEvent.data.size() > 1) { m_ev_filled++; m_ev_runningavg_filled++; }
+				//				if(daqEvent.data.size() > 1) { m_ev_filled++; m_ev_runningavg_filled++; }
 
 				if(m_ev%1000 == 0) {
 					std::cout << "DRS4 Board "

@@ -174,27 +174,37 @@ void DRS4Producer::OnConfigure(const eudaq::Configuration& conf) {
 		if (m_drs)
 			delete m_drs;
 		m_drs = new DRS();
+		m_serialno = m_config.Get("serialno",-1);
+
+		float trigger_level = m_config.Get("trigger_level",-0.05);
+		bool trigger_polarity = m_config.Get("trigger_polarity",false);
+		cout<<"Config: "<<endl;
+		cout<<"\tserial no:"<<m_serialno<<endl;
+		cout<<"\ttrigger_level:"<<trigger_level<<endl;
+		cout<<"\ttrigger_polarity:"<<trigger_polarity<<endl<<endl;
 		cout<<"Show boards..."<<endl;
 		int nBoards = m_drs->GetNumberOfBoards();
-		cout<<"There are "<<nBoards<<" DRS4-Evaluation-Board(s) connected"<<endl;
+		cout<<"There are "<<nBoards<<" DRS4-Evaluation-Board(s) connected:"<<endl;
 		/* show any found board(s) */
+		int board_no = 0;
 		for (size_t i=0 ; i<m_drs->GetNumberOfBoards() ; i++) {
 			m_b = m_drs->GetBoard(i);
-			printf("Found DRS4 evaluation board, serial #%d, firmware revision %d\n",
-					m_b->GetBoardSerialNumber(), m_b->GetFirmwareVersion());
+			printf("\t %2d) serial #%d, firmware revision %d\n",
+					i, m_b->GetBoardSerialNumber(), m_b->GetFirmwareVersion());
+			if (m_b->GetBoardSerialNumber() == m_serialno)
+				board_no = i;
 		}
 
 		/* exit if no board found */
 		if (!nBoards){
-
 			EUDAQ_ERROR(string("No Board connected exception."));
 			SetStatus(eudaq::Status::LVL_ERROR, "No Board connected.");
 			return;
 		}
 
-
+		cout <<"Get board no: "<<board_no<<endl;
 		/* continue working with first board only */
-		m_b = m_drs->GetBoard(0);
+		m_b = m_drs->GetBoard(board_no);
 
 
 		/* initialize board */
@@ -223,8 +233,8 @@ void DRS4Producer::OnConfigure(const eudaq::Configuration& conf) {
 			m_b->EnableTrigger(0, 1);           // lemo off, analog trigger on
 			m_b->SetTriggerSource(0);           // use CH1 as source
 		}
-		m_b->SetTriggerLevel(-0.05);            // 0.05 V
-		m_b->SetTriggerPolarity(false);        // positive edge
+		m_b->SetTriggerLevel(trigger_level);            // 0.05 V
+		m_b->SetTriggerPolarity(trigger_polarity);        // positive edge
 	}catch ( ... ){
 		EUDAQ_ERROR(string("Unknown exception."));
 		SetStatus(eudaq::Status::LVL_ERROR, "Unknown exception.");

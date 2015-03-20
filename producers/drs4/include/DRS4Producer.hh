@@ -39,6 +39,7 @@ private:
   eudaq::Configuration m_config;
   eudaq::Timer* m_t;
   DRS *m_drs;
+  int m_serialno;
   DRSBoard *m_b;
   float time_array[8][1024];
   float wave_array[8][1024];

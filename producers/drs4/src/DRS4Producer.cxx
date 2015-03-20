@@ -74,9 +74,10 @@ void DRS4Producer::OnStopRun() {
 	m_running = false;
 	std::cout << "Stopping Run" << std::endl;
 
+
 	try {
 
-		if (m_b->IsBusy()) {
+		if (m_b && m_b->IsBusy()) {
 			m_b->SoftTrigger();
 			for (int i=0 ; i<10 && m_b->IsBusy() ; i++)
 				usleep(10);//todo not mt save
@@ -108,6 +109,8 @@ void DRS4Producer::ReadoutLoop() {
 			continue;
 		}
 		else {
+			if (!m_b)
+				continue;
 			// Acquire lock for pxarCore object access:
 			m_b->SoftTrigger();
 			if (m_b->IsBusy())
@@ -198,7 +201,7 @@ void DRS4Producer::OnConfigure(const eudaq::Configuration& conf) {
 		/* exit if no board found */
 		if (!nBoards){
 			EUDAQ_ERROR(string("No Board connected exception."));
-			SetStatus(eudaq::Status::LVL_ERROR, "No Board connected.");
+//			SetStatus(eudaq::Status::LVL_ERROR, "No Board connected.");
 			return;
 		}
 

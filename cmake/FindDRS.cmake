@@ -31,7 +31,10 @@ IF (DRS_LIBRARY)
     MESSAGE(STATUS "\tFound DRS_LIBRARY Dir:" ${DRS_LIBRARY})
 ELSE ()
     MESSAGE(STATUS "\tYou might to build a shared object: "
-     "g++ -Wall -shared -fPIC -o libDRS.so src/DRS.cpp src/averager.cpp src/mxml.c -I include/")
+    "	
+    "$(SHARED_OBJECTS): %.so:  DRS.o mxml.o averager.o musbstd.o"
+	" $(CXX) $(CFLAGS) $(WXFLAGS) $(WXLIBS) $(LIBS) -Wall -shared -fPIC -o $@ -I include/ src/DRS.cpp src/averager.cpp src/mxml.c  src/musbstd.c -I include/
+    "
     
     MESSAGE(SEND_ERROR "\tCannot find DRS_LIBRARY Dir: " ${DRS_LIBRARY})
 ENDIF ()

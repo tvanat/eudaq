@@ -30,6 +30,13 @@ DRS4Producer::DRS4Producer(const std::string & name, const std::string & runcont
 	m_b = 0;
 	m_drs = 0;
 	cout<<"Type:"<<m_event_type<<endl;
+
+	cout<<"Get DRS() ..."<<endl;
+	if (m_drs)
+		delete m_drs;
+	m_drs = new DRS();
+	int nBoards = m_drs->GetNumberOfBoards();
+	cout <<" NBoards :"<<nBoards<<endl;
 }
 
 void DRS4Producer::OnStartRun(unsigned runnumber) {
@@ -101,6 +108,7 @@ void DRS4Producer::OnTerminate() {
 };
 
 void DRS4Producer::ReadoutLoop() {
+	int k = 0;
 	while (!m_terminated) {
 		// No run is m_running, cycle and wait:
 		if(!m_running) {
@@ -112,9 +120,12 @@ void DRS4Producer::ReadoutLoop() {
 			if (!m_b)
 				continue;
 			// Acquire lock for pxarCore object access:
-			m_b->SoftTrigger();
-			if (m_b->IsBusy())
+			if (m_b->IsBusy()){
+				cout<<"Device Is Busy send trigger"<<endl;
+				m_b->SoftTrigger();
+				usleep(10);
 				continue;
+			}
 			// Trying to get the next event, daqGetRawEvent throws exception if none is available:
 			try {
 				/* read all waveforms */
@@ -133,7 +144,6 @@ void DRS4Producer::ReadoutLoop() {
 
 				/* Restart Readout */
 				m_b->StartDomino();
-
 				/* print some progress indication */
 				printf("\rEvent #%6d read successfully\n",m_ev);
 
@@ -173,20 +183,16 @@ void DRS4Producer::OnConfigure(const eudaq::Configuration& conf) {
 
 	try {
 		/* do initial scan */
-		cout<<"Get DRS() ..."<<endl;
-		if (m_drs)
-			delete m_drs;
-		m_drs = new DRS();
 		m_serialno = m_config.Get("serialno",-1);
 
 		float trigger_level = m_config.Get("trigger_level",-0.05);
 		bool trigger_polarity = m_config.Get("trigger_polarity",false);
+		int nBoards = m_drs->GetNumberOfBoards();
 		cout<<"Config: "<<endl;
 		cout<<"\tserial no:"<<m_serialno<<endl;
 		cout<<"\ttrigger_level:"<<trigger_level<<endl;
 		cout<<"\ttrigger_polarity:"<<trigger_polarity<<endl<<endl;
 		cout<<"Show boards..."<<endl;
-		int nBoards = m_drs->GetNumberOfBoards();
 		cout<<"There are "<<nBoards<<" DRS4-Evaluation-Board(s) connected:"<<endl;
 		/* show any found board(s) */
 		int board_no = 0;

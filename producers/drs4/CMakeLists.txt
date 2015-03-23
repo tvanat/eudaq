@@ -8,11 +8,16 @@ ELSE(DRS_FOUND)
   MESSAGE(FATAL_ERROR "Could not find DRS! Make sure to set the environment variable $DRS_PATH to the path of your pxar installation!")
 ENDIF(DRS_FOUND)
 
-SET(sourcefiles src/DRS4Producer.cxx)
-MESSAGE(STATUS "SOURCEFILES " ${sourcefiles})
+SET(sourcefiles src/DRS4Producer.cxx )
+#DRS.o averager.o drs_exam.o
+#src/CMSPixelProducer.cxx src/CMSPixelConfigParser.cxx
+  set(sourcefiles ${DRS_SRC_DIR}/DRS.cpp ${DRS_SRC_DIR}/averager.cpp ${DRS_SRC_DIR}/mxml.c)
+MESSAGE(STATUS "SOURCEFILES: '" ${sourcefiles} "'")
 
 INCLUDE_DIRECTORIES(include ${DRS_INCLUDE_DIRS})
 ADD_EXECUTABLE(${name} ${sourcefiles})
+
+MESSAGE(STATUS "LIBRARY: " ${DRS_LIBRARY})
 
 MESSAGE(STATUS "ADD_EXECUTABLE " ${name} " "${sourcefiles})
 TARGET_LINK_LIBRARIES(${name} EUDAQ ${EUDAQ_THREADS_LIB} ${DRS_LIBRARY})

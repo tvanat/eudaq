@@ -45,5 +45,5 @@ private:
   float wave_array[8][1024];
   int n_channels;
 };
-
+int main(int /*argc*/, const char ** argv);
 #endif /*DRS4PRODUCER_HH*/

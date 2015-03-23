@@ -15,13 +15,23 @@ ELSE ()
     MESSAGE(SEND_ERROR "\tCannot find Include Dir..." ${DRS_INCLUDE_DIR})
 ENDIF ()
 
-MESSAGE(STATUS "\tFind DRS_LIBRARY with DRS.o in" ${DRS_PATH}  $ENV{DRS_PATH})
+
+find_path(DRS_SRC_DIR DRS.cpp
+  HINTS "${DRS_PATH}/src" "$ENV{DRS_PATH}/src")
+IF (DRS_INCLUDE_DIR)
+    MESSAGE(STATUS "\tFound DRS_INCLUDE_DIR Dir:" ${DRS_SRC_DIR})
+ELSE ()
+    MESSAGE(SEND_ERROR "\tCannot find Include Dir..." ${DRS_SRC_DIR})
+ENDIF ()
+
+MESSAGE(STATUS "\tFind DRS_LIBRARY " ${DRS_PATH}  $ENV{DRS_PATH})
 find_library(DRS_LIBRARY NAMES DRS
   HINTS "${DRS_PATH}" "$ENV{DRS_PATH}")
 IF (DRS_LIBRARY)
     MESSAGE(STATUS "\tFound DRS_LIBRARY Dir:" ${DRS_LIBRARY})
 ELSE ()
-    MESSAGE(STATUS "\tYou might to build a shared object:  g++ -Wall -shared -fPIC -o libDRS.so src/DRS.cpp src/averager.cpp src/mxml.c -I include/")
+    MESSAGE(STATUS "\tYou might to build a shared object: "
+     "g++ -Wall -shared -fPIC -o libDRS.so src/DRS.cpp src/averager.cpp src/mxml.c -I include/")
     
     MESSAGE(SEND_ERROR "\tCannot find DRS_LIBRARY Dir: " ${DRS_LIBRARY})
 ENDIF ()

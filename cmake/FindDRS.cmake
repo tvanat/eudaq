@@ -15,11 +15,10 @@ ELSE ()
     MESSAGE(SEND_ERROR "\tCannot find Include Dir..." ${DRS_INCLUDE_DIR})
 ENDIF ()
 
-
-find_path(DRS_SRC_DIR DRS.cpp
-  HINTS "${DRS_PATH}/src" "$ENV{DRS_PATH}/src")
-IF (DRS_INCLUDE_DIR)
-    MESSAGE(STATUS "\tFound DRS_INCLUDE_DIR Dir:" ${DRS_SRC_DIR})
+find_path(DRS_SRC_DIR DRS.cpp 
+    HINTS "${DRS_PATH}/src" "$ENV{DRS_PATH}/src")    
+IF (DRS_SRC_DIR)
+    MESSAGE(STATUS "\tFound DRS_SRC_DIR Dir:" ${DRS_SRC_DIR})
 ELSE ()
     MESSAGE(SEND_ERROR "\tCannot find Include Dir..." ${DRS_SRC_DIR})
 ENDIF ()
@@ -31,11 +30,11 @@ IF (DRS_LIBRARY)
     MESSAGE(STATUS "\tFound DRS_LIBRARY Dir:" ${DRS_LIBRARY})
 ELSE ()
     MESSAGE(STATUS "\tYou might to build a shared object: "
-    "	
+    "	"
     "$(SHARED_OBJECTS): %.so:  DRS.o mxml.o averager.o musbstd.o"
-	" $(CXX) $(CFLAGS) $(WXFLAGS) $(WXLIBS) $(LIBS) -Wall -shared -fPIC -o $@ -I include/ src/DRS.cpp src/averager.cpp src/mxml.c  src/musbstd.c -I include/
-    "
-    
+	" $(CXX) $(CFLAGS) $(WXFLAGS) $(WXLIBS) $(LIBS)"
+	" -Wall -shared -fPIC -o $@ -I include/ src/DRS.cpp "
+	"src/averager.cpp src/mxml.c  src/musbstd.c -I include/")
     MESSAGE(SEND_ERROR "\tCannot find DRS_LIBRARY Dir: " ${DRS_LIBRARY})
 ENDIF ()
 
@@ -51,6 +50,7 @@ set(DRS_INCLUDE_DIRS ${DRS_INCLUDE_DIR})
 IF(DRS_LIBRARY AND DRS_INCLUDE_DIR)
    SET(DRS_FOUND TRUE)
    MESSAGE(STATUS "Found DRS library and headers.")
-ENDIF(DRS_LIBRARY AND DRS_INCLUDE_DIR)
+ENDIF () 
+#(DRS_LIBRARY AND DRS_INCLUDE_DIR)
 
 mark_as_advanced(DRS_LIBRARY DRS_INCLUDE_DIR)

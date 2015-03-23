@@ -19,7 +19,7 @@ ADD_EXECUTABLE(${name} ${sourcefiles})
 
 MESSAGE(STATUS "LIBRARY: " ${DRS_LIBRARY})
 
-MESSAGE(STATUS "ADD_EXECUTABLE " ${name} " "${sourcefiles})
+MESSAGE(STATUS "ADD_EXECUTABLE " ${name} " " ${sourcefiles})
 TARGET_LINK_LIBRARIES(${name} EUDAQ ${EUDAQ_THREADS_LIB} ${DRS_LIBRARY})
 
 INSTALL(TARGETS ${name}

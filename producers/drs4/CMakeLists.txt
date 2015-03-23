@@ -9,9 +9,6 @@ ELSE(DRS_FOUND)
 ENDIF(DRS_FOUND)
 
 SET(sourcefiles src/DRS4Producer.cxx )
-#DRS.o averager.o drs_exam.o
-#src/CMSPixelProducer.cxx src/CMSPixelConfigParser.cxx
-  set(sourcefiles ${DRS_SRC_DIR}/DRS.cpp ${DRS_SRC_DIR}/averager.cpp ${DRS_SRC_DIR}/mxml.c)
 MESSAGE(STATUS "SOURCEFILES: '" ${sourcefiles} "'")
 
 INCLUDE_DIRECTORIES(include ${DRS_INCLUDE_DIRS})

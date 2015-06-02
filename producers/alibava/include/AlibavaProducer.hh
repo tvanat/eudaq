@@ -1,5 +1,5 @@
-#ifndef CMSPIXELPRODUCER_HH
-#define CMSPIXELPRODUCER_HH
+#ifndef ALIBAVAPRODUCER_HH
+#define ALIBAVAPRODUCER_HH
 
 // EUDAQ includes:
 #include "eudaq/Producer.hh"
@@ -30,4 +30,4 @@ private:
   bool m_terminated, m_running;
   eudaq::Configuration m_config;
 };
-#endif /*CMSPIXELPRODUCER_HH*/
+#endif /*ALIBAVAPRODUCER_HH*/

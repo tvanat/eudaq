@@ -16,7 +16,7 @@
 
 using namespace std; 
 
-// event type name, needed for readout with eudaq. Links to /main/lib/src/CMSPixelConverterPlugin.cc:
+// event type name, needed for readout with eudaq.
 static const std::string EVENT_TYPE = "ALIBAVA";
 
 AlibavaProducer::AlibavaProducer(const std::string & name, const std::string & runcontrol, const std::string & verbosity)

@@ -4,6 +4,7 @@
 #include "eudaq/RawDataEvent.hh"
 #include "eudaq/Timer.hh"
 #include "eudaq/Utils.hh"
+#include "eudaq/Status.hh"
 #include "eudaq/OptionParser.hh"
 
 #include "ExampleHardware.hh"
@@ -58,6 +59,8 @@ class ExampleProducer : public eudaq::Producer {
 
       // At the end, set the status that will be displayed in the Run Control.
       SetStatus(eudaq::Status::LVL_OK, "Running", eudaq::Status::ST_RUNNING);
+
+      hardware.PrepareForRun();
       started=true;
     }
 
@@ -69,10 +72,10 @@ class ExampleProducer : public eudaq::Producer {
       stopping = true;
 
       // wait until all events have been read out from the hardware
-      /*while (stopping) {
+      while (stopping) {
         eudaq::mSleep(20);
         //std::cout<<"Does hardware have pending? "<<hardware.EventsPending()<<"\n";
-      }*/
+      }
 
       SetStatus(eudaq::Status::LVL_OK, "", eudaq::Status::ST_CONF);
       // Send an EORE after all the real events have been sent
@@ -102,13 +105,15 @@ class ExampleProducer : public eudaq::Producer {
           // Then restart the loop
           continue;
         }
-		if (!started)
-		{
-			// Now sleep for a bit, to prevent chewing up all the CPU
-			eudaq::mSleep(20);
-			// Then restart the loop
-			continue;
-		}
+	
+	if (GetStatus() != eudaq::Status::ST_RUNNING) {
+	  // Now sleep for a bit, to prevent chewing up all the CPU
+	  eudaq::mSleep(20);
+	  // Then restart the loop
+	  continue;
+	}
+
+	
         // If we get here, there must be data to read out
         // Create a RawDataEvent to contain the event data to be sent
         eudaq::RawDataEvent ev(EVENT_TYPE, m_run, m_ev);

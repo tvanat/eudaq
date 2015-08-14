@@ -1,4 +1,4 @@
-#include "eudaq/ExampleHardware.hh"
+#include "ExampleHardware.hh"
 #include "eudaq/Utils.hh"
 
 namespace eudaq {

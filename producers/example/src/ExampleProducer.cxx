@@ -5,7 +5,8 @@
 #include "eudaq/Timer.hh"
 #include "eudaq/Utils.hh"
 #include "eudaq/OptionParser.hh"
-#include "eudaq/ExampleHardware.hh"
+
+#include "ExampleHardware.hh"
 #include <iostream>
 #include <ostream>
 #include <vector>

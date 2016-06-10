@@ -207,7 +207,11 @@ CMSPixelProducer::GetConfTrimming(std::vector<pxar::pixelConfig> maskbits,
       std::string dummy;
       int trim, col, row;
       linestream >> trim >> dummy >> col >> row;
-      pixels.push_back(pxar::pixelConfig(col, row, trim, false, false));
+      if(trim > 15) {
+	maskbits.push_back(pxar::pixelConfig(i2c < 0 ? 0 : i2c, col, row, 15, true, false));
+	pixels.push_back(pxar::pixelConfig(col, row, 15, false, false));
+      }
+      else pixels.push_back(pxar::pixelConfig(col, row, trim, false, false));
     }
     m_trimmingFromConf = true;
   } else {

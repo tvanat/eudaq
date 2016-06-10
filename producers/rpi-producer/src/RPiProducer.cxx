@@ -83,7 +83,7 @@ void RPiProducer::readDHT22() {
     if((dht22_dat[2] & 0x80) != 0) t*= -1;
 
     cout << "Temperature: " << t << "*C" << endl;
-    cout << "Feuchtigkeit: " << h << "%" << endl;\
+    cout << "Feuchtigkeit: " << h << "%" << endl;
     dhtEvent.push_back(t);
     dhtEvent.push_back(h);
   }
@@ -91,7 +91,12 @@ void RPiProducer::readDHT22() {
 
 RPiProducer::RPiProducer(const std::string &name,
 			 const std::string &runcontrol)
-  : eudaq::Producer(name, runcontrol), m_run(0), m_ev(0), m_terminated(false), m_name(name), m_trigger_pin(13), m_dht22_pin(2), m_dht22_threshold(25), m_sampling_freq(10), dhtEvent() { }
+  : eudaq::Producer(name, runcontrol), m_run(0), m_ev(0), m_terminated(false), m_name(name), m_trigger_pin(13), m_dht22_pin(2), m_dht22_threshold(25), m_sampling_freq(10), dhtEvent() {
+  if(wiringPiSetupGpio() == -1) {
+    std::cout << "WiringPi could not be set up" << std::endl;
+    throw eudaq::LoggedException("WiringPi could not be set up");
+  }
+}
 
 void RPiProducer::OnConfigure(const eudaq::Configuration &config) {
 
@@ -115,11 +120,6 @@ void RPiProducer::OnConfigure(const eudaq::Configuration &config) {
   std::cout << m_name << ": DHT22 threshold level " << std::to_string(m_dht22_threshold) << std::endl;
   EUDAQ_INFO(string("DHT22 threshold level " + std::to_string(m_dht22_threshold)));
   
-  if(wiringPiSetupGpio() == -1) {
-    std::cout << "WiringPi could not be set up" << std::endl;
-    throw eudaq::LoggedException("WiringPi could not be set up");
-  }
-
   // Set pin mode to input:
   pinMode(m_trigger_pin, INPUT);
 

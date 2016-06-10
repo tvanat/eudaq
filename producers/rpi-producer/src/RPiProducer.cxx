@@ -179,6 +179,23 @@ void RPiProducer::OnStopRun() {
     EUDAQ_INFO(string("Disable trigger interrupt on pin " + std::to_string(m_trigger_pin)));
     
     m_running = false;
+    std::lock_guard<std::mutex> lck(m_mutex);
+
+    while(m_trigger_stack > 0) {
+      // Prepare event before locking:
+      eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
+
+      // Ship event with the latest sample:
+      ev.AddBlock(0, reinterpret_cast<const char *>(&dhtEvent[0]),
+		  sizeof(dhtEvent[0]) * dhtEvent.size());
+      SendEvent(ev);
+
+      m_trigger_stack--;
+    }
+
+    // Sending the final end-of-run event:
+    SendEvent(eudaq::RawDataEvent::EORE("RPIDHT22", m_run, m_ev));
+
     SetStatus(eudaq::Status::LVL_OK, "Stopped");
   } catch (const std::exception &e) {
     printf("While Stopping: Caught exception: %s\n", e.what());
@@ -211,7 +228,7 @@ void RPiProducer::ReadoutLoop() {
     // Send out events:
     while(m_trigger_stack > 0) {
       // Prepare event before locking:
-      eudaq::RawDataEvent ev("RPIDHT22", m_run, ++m_ev);
+      eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
       
       // Ship event with the latest sample:
       ev.AddBlock(0, reinterpret_cast<const char *>(&dhtEvent[0]),

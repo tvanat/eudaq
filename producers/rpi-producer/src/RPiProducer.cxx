@@ -41,7 +41,8 @@ void RPiProducer::readDHT22() {
   eudaq::mSleep(5);
 
   digitalWrite(m_dht22_pin, 1);
-  usleep(20);
+  delayMicroseconds(20);
+  //usleep(20);
 
   pinMode(m_dht22_pin, INPUT);
 
@@ -51,7 +52,8 @@ void RPiProducer::readDHT22() {
 
     while(digitalRead(m_dht22_pin) == laststate){
       counter++;
-      usleep(1);
+      //usleep(1);
+      delayMicroseconds(1);
       if (counter == 255) break;
     }
 
@@ -82,16 +84,19 @@ void RPiProducer::readDHT22() {
 
     if((dht22_dat[2] & 0x80) != 0) t*= -1;
 
-    cout << "Temperature: " << t << "*C" << endl;
-    cout << "Feuchtigkeit: " << h << "%" << endl;
+    std::cout << "Temperature: " << t << "*C" << std::endl;
+    std::cout << "Feuchtigkeit: " << h << "%" << std::endl;
     dhtEvent.push_back(t);
     dhtEvent.push_back(h);
+  }
+  else {
+    std::cout << "DHT22 sample was invalid." << std::endl;
   }
 }
 
 RPiProducer::RPiProducer(const std::string &name,
 			 const std::string &runcontrol)
-  : eudaq::Producer(name, runcontrol), m_run(0), m_ev(0), m_terminated(false), m_name(name), m_trigger_pin(13), m_dht22_pin(2), m_dht22_threshold(25), m_sampling_freq(10), dhtEvent() {
+  : eudaq::Producer(name, runcontrol), m_run(0), m_ev(0), m_running(false), m_terminated(false), m_name(name), m_trigger_pin(13), m_dht22_pin(2), m_dht22_threshold(25), m_sampling_freq(10), dhtEvent() {
   if(wiringPiSetupGpio() == -1) {
     std::cout << "WiringPi could not be set up" << std::endl;
     throw eudaq::LoggedException("WiringPi could not be set up");
@@ -124,7 +129,10 @@ void RPiProducer::OnConfigure(const eudaq::Configuration &config) {
   pinMode(m_trigger_pin, INPUT);
 
   // Initialize DHT22 measurement:
-  while (dhtEvent.empty()) { readDHT22(); }
+  while (dhtEvent.empty()) {
+    readDHT22();
+    eudaq::mSleep(500);
+  }
   EUDAQ_INFO(string("Validated DHT22 sensor reading."));
 
   try {
@@ -145,7 +153,8 @@ void RPiProducer::OnStartRun(unsigned runnumber) {
 
     eudaq::RawDataEvent bore(eudaq::RawDataEvent::BORE("RPIDHT22", m_run));
     // Set random information:
-    bore.SetTag("TYPE", "Schnitzelboretchen 4.0");
+    bore.SetTag("TYPE", "DHT22TempReadout");
+    bore.SetTag("Sampling", m_sampling_freq);
     // Send the event out:
     SendEvent(bore);
 
@@ -153,6 +162,7 @@ void RPiProducer::OnStartRun(unsigned runnumber) {
     int code = wiringPiISR(m_trigger_pin,INT_EDGE_RISING,&interrupthandler);
     EUDAQ_INFO(string("Enabled trigger interrupt for pin " + std::to_string(m_trigger_pin)));  
 
+    m_running = true;
     SetStatus(eudaq::Status::LVL_OK, "Running");
   } catch (...) {
     EUDAQ_ERROR(string("Unknown exception."));
@@ -168,6 +178,7 @@ void RPiProducer::OnStopRun() {
     pinMode(m_trigger_pin, OUTPUT);
     EUDAQ_INFO(string("Disable trigger interrupt on pin " + std::to_string(m_trigger_pin)));
     
+    m_running = false;
     SetStatus(eudaq::Status::LVL_OK, "Stopped");
   } catch (const std::exception &e) {
     printf("While Stopping: Caught exception: %s\n", e.what());
@@ -190,6 +201,8 @@ void RPiProducer::ReadoutLoop() {
 
   // Loop until Run Control tells us to terminate
   while (!m_terminated) {
+    if(!m_running) { sched_yield(); continue; }
+
     eudaq::mSleep(1000/m_sampling_freq);
 
     // Sample new temperature/humidity:

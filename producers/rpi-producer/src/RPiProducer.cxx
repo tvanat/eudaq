@@ -117,6 +117,9 @@ RPiProducer::RPiProducer(const std::string &name,
     std::cout << "WiringPi could not be set up" << std::endl;
     throw eudaq::LoggedException("WiringPi could not be set up");
   }
+
+  std::cout << "Using phat scheduler priority of 99!" << std::endl;
+  if(piHiPri(99) < 0) std::cout << "Didn't work out..." << std::endl;
 }
 
 void RPiProducer::OnConfigure(const eudaq::Configuration &config) {
@@ -186,6 +189,7 @@ void RPiProducer::OnStartRun(unsigned runnumber) {
   try {
 
     std::cout << "Start Run: " << m_run << std::endl;
+    m_trigger_stack = 0;
 
     eudaq::RawDataEvent bore(eudaq::RawDataEvent::BORE("RPIDHT22", m_run));
     // Set random information:
@@ -215,6 +219,13 @@ void RPiProducer::OnStartRun(unsigned runnumber) {
 void RPiProducer::OnStopRun() {
 
   try {
+    m_running = false;
+
+    // Wait before we stop the DAQ because TLU takes some time to pick up the
+    // OnRunStop signal
+    // otherwise the last triggers get lost.
+    eudaq::mSleep(4000);
+
     // FIXME disable interrupt!
     pinMode(m_trigger_pin, OUTPUT);
     EUDAQ_INFO(string("Disable trigger interrupt on pin " + std::to_string(m_trigger_pin)));
@@ -229,17 +240,21 @@ void RPiProducer::OnStopRun() {
     }
     std::cout << "Remainder: " << remainder << std::endl;
     
-    while(m_trigger_stack > 0) {
+    while(m_ev < m_trigger_stack) {
       // Prepare event before locking:
       eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
 
       // Ship event with the latest sample:
       ev.AddBlock(0, reinterpret_cast<const char *>(&dhtEvent[0]),
 		  sizeof(dhtEvent[0]) * dhtEvent.size());
+      // FIXME event count not correct, send 4096!
       SendEvent(ev);
-
-      m_trigger_stack--;
     }
+
+    std::lock_guard<std::mutex> lck(m_mutex);
+    std::cout << "Trigger stack: " << m_trigger_stack << " == Evts: " << m_ev << std::endl;
+    EUDAQ_INFO(string("Received " + std::to_string(m_ev) + " events (" + std::to_string(m_trigger_stack) + " triggers)"));
+    m_trigger_stack = 0;
 
     // Sending the final end-of-run event:
     SendEvent(eudaq::RawDataEvent::EORE("RPIDHT22", m_run, m_ev));
@@ -274,8 +289,7 @@ void RPiProducer::ReadoutLoop() {
     readDHT22();
 
     // Send out events:
-    while(m_trigger_stack > 0) {
-
+    while(m_ev < m_trigger_stack) {
       // Prepare event before locking:
       eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
       

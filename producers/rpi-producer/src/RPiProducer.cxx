@@ -154,7 +154,7 @@ void RPiProducer::OnConfigure(const eudaq::Configuration &config) {
     // Set pin modes to input:
     for(int i = 0; i < m_hef2020b_pins.size(); i++) {
       pinMode(m_hef2020b_pins.at(i), INPUT);
-      std::cout << "Pin (value " << (1 << i) << ") set to INPUT" << std::endl;
+      std::cout << "Pin " << m_hef2020b_pins.at(i) << " (value " << (1 << i) << ") set to INPUT" << std::endl;
     }
     
     m_reset_pin = config.Get("reset_pin", 13);
@@ -233,9 +233,12 @@ void RPiProducer::OnStopRun() {
       remainder |= digitalRead(m_hef2020b_pins.at(i)) << i;
     }
     std::cout << "Remainder: " << remainder << std::endl;
-    // FIXME handle remainder!
+
+    // Add remaining interrupts / counter overflows:
+    remainder += m_trigger_stack*(1 << m_hef2020b_pins.size());
+    std::cout << "Trigger stack: " << m_trigger_stack << ", total remainder: " << remainder << std::endl;
     
-    while(m_trigger_stack > 0) {
+    while(remainder > 0) {
       
       // Prepare event before locking:
       eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
@@ -243,13 +246,11 @@ void RPiProducer::OnStopRun() {
       // Ship event with the latest sample:
       ev.AddBlock(0, reinterpret_cast<const char *>(&dhtEvent[0]),
 		  sizeof(dhtEvent[0]) * dhtEvent.size());
-      // FIXME event count not correct, send 4096!
       SendEvent(ev);
+      remainder--;
     }
 
-    std::lock_guard<std::mutex> lck(m_mutex);
-    std::cout << "Trigger stack: " << m_trigger_stack << " == Evts: " << m_ev << std::endl;
-    EUDAQ_INFO(string("Received " + std::to_string(m_ev) + " events (" + std::to_string(m_trigger_stack) + " triggers)"));
+    EUDAQ_INFO(string("Received " + std::to_string(m_ev) + " events in total"));
     m_trigger_stack = 0;
 
     // Sending the final end-of-run event:
@@ -286,6 +287,7 @@ void RPiProducer::ReadoutLoop() {
 
     // Send out events:
     while(m_trigger_stack > 0) {
+      std::cout << "Sending " << (1 << m_hef2020b_pins.size()) << " events..." << std::endl;
 
       // Send the event 2^n_pins times (interrupt is on MSB of the ripple counter):
       for(int i = 0; i < (1 << m_hef2020b_pins.size()); i++) {

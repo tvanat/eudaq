@@ -31,6 +31,9 @@ public:
   void ReadoutLoop();
   
 private:
+  std::vector<int32_t> &split(const std::string &s, char delim, std::vector<int32_t> &elems);
+  std::vector<int32_t> split(const std::string &s, char delim);
+
   void readDHT22();
 
   unsigned m_run, m_ev;
@@ -39,8 +42,10 @@ private:
   int m_trigger_pin;
   int m_dht22_pin;
   int m_dht22_threshold;
-  
   unsigned m_sampling_freq;
+  std::vector<int32_t> m_hef2020b_pins;
+  int m_reset_pin;
+  
   std::vector<double> dhtEvent;
   std::string m_name;
 };

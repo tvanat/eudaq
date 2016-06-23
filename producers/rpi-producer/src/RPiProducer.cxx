@@ -25,6 +25,22 @@ void interrupthandler() {
   m_trigger_stack++;
 }
 
+std::vector<int32_t> &RPiProducer::split(const std::string &s, char delim,
+                                              std::vector<int32_t> &elems) {
+  std::stringstream ss(s);
+  std::string item;
+  int32_t def = 0;
+  while (std::getline(ss, item, delim)) {
+    elems.push_back(eudaq::from_string(item, def));
+  }
+  return elems;
+}
+
+std::vector<int32_t> RPiProducer::split(const std::string &s, char delim) {
+  std::vector<int32_t> elems;
+  split(s, delim, elems);
+  return elems;
+}
 
 void RPiProducer::readDHT22() {
 
@@ -96,7 +112,7 @@ void RPiProducer::readDHT22() {
 
 RPiProducer::RPiProducer(const std::string &name,
 			 const std::string &runcontrol)
-  : eudaq::Producer(name, runcontrol), m_run(0), m_ev(0), m_running(false), m_terminated(false), m_name(name), m_trigger_pin(13), m_dht22_pin(2), m_dht22_threshold(25), m_sampling_freq(10), dhtEvent() {
+  : eudaq::Producer(name, runcontrol), m_run(0), m_ev(0), m_running(false), m_terminated(false), m_name(name), m_trigger_pin(13), m_dht22_pin(2), m_dht22_threshold(25), m_sampling_freq(10), m_hef2020b_pins(), m_reset_pin(21), dhtEvent() {
   if(wiringPiSetupGpio() == -1) {
     std::cout << "WiringPi could not be set up" << std::endl;
     throw eudaq::LoggedException("WiringPi could not be set up");
@@ -105,37 +121,57 @@ RPiProducer::RPiProducer(const std::string &name,
 
 void RPiProducer::OnConfigure(const eudaq::Configuration &config) {
 
-  std::cout << "Configuring: " << config.Name() << std::endl;
-
-  // Read and store configured pin from eudaq config:
-  m_trigger_pin = config.Get("trigger_pin", 13);
-  std::cout << m_name << ": Configured pin " << std::to_string(m_trigger_pin) << " as trigger input." << std::endl;
-  EUDAQ_INFO(string("Configured pin " + std::to_string(m_trigger_pin) + " as trigger input."));
-
-  m_dht22_pin = config.Get("dht22_pin", 2);
-  std::cout << m_name << ": Configured pin " << std::to_string(m_dht22_pin) << " as DHT22 input." << std::endl;
-  EUDAQ_INFO(string("Configured pin " + std::to_string(m_dht22_pin) + " as DHT22 input."));
-
-  // Store temperature sampling frequency in Hz:
-  m_sampling_freq = config.Get("sampling_freq", 10);
-  std::cout << m_name << ": Sampling temperature at " << std::to_string(m_sampling_freq) << " Hz." << std::endl;
-  EUDAQ_INFO(string("Sampling temperature at " + std::to_string(m_sampling_freq) + " Hz."));
-
-  m_dht22_threshold = config.Get("dht22_threshold", 25);
-  std::cout << m_name << ": DHT22 threshold level " << std::to_string(m_dht22_threshold) << std::endl;
-  EUDAQ_INFO(string("DHT22 threshold level " + std::to_string(m_dht22_threshold)));
-  
-  // Set pin mode to input:
-  pinMode(m_trigger_pin, INPUT);
-
-  // Initialize DHT22 measurement:
-  while (dhtEvent.empty()) {
-    readDHT22();
-    eudaq::mSleep(500);
-  }
-  EUDAQ_INFO(string("Validated DHT22 sensor reading."));
-
   try {
+    std::cout << "Configuring: " << config.Name() << std::endl;
+
+    // Read and store configured pin from eudaq config:
+    m_trigger_pin = config.Get("trigger_pin", 13);
+    std::cout << m_name << ": Configured pin " << std::to_string(m_trigger_pin) << " as trigger input." << std::endl;
+    EUDAQ_INFO(string("Configured pin " + std::to_string(m_trigger_pin) + " as trigger input."));
+
+    m_dht22_pin = config.Get("dht22_pin", 2);
+    std::cout << m_name << ": Configured pin " << std::to_string(m_dht22_pin) << " as DHT22 input." << std::endl;
+    EUDAQ_INFO(string("Configured pin " + std::to_string(m_dht22_pin) + " as DHT22 input."));
+    // Set pin mode to input:
+    pinMode(m_trigger_pin, INPUT);
+
+    // Store temperature sampling frequency in Hz:
+    m_sampling_freq = config.Get("sampling_freq", 10);
+    std::cout << m_name << ": Sampling temperature at " << std::to_string(m_sampling_freq) << " Hz." << std::endl;
+    EUDAQ_INFO(string("Sampling temperature at " + std::to_string(m_sampling_freq) + " Hz."));
+
+    m_dht22_threshold = config.Get("dht22_threshold", 25);
+    std::cout << m_name << ": DHT22 threshold level " << std::to_string(m_dht22_threshold) << std::endl;
+    EUDAQ_INFO(string("DHT22 threshold level " + std::to_string(m_dht22_threshold)));
+
+    
+    // Read in the HEF2020B counter GPIO input pins, starting with LSB
+    m_hef2020b_pins = split(config.Get("counter_pins", "-1"), ' ');
+    // FIXME throw proper exception
+    //if (m_hef2020b_pins.size() < 12) throw;
+    
+    std::cout << m_name << ": Configured " << std::to_string(m_hef2020b_pins.size()) << " ripple counter input pins." << std::endl;
+    EUDAQ_INFO(string("Configured " + std::to_string(m_hef2020b_pins.size()) + " ripple counter input pins."));
+    // Set pin modes to input:
+    for(int i = 0; i < m_hef2020b_pins.size(); i++) {
+      pinMode(m_hef2020b_pins.at(i), INPUT);
+      std::cout << "Pin (value " << (1 << i) << ") set to INPUT" << std::endl;
+    }
+    
+    m_reset_pin = config.Get("reset_pin", 13);
+    std::cout << m_name << ": Configured pin " << std::to_string(m_reset_pin) << " as trigger counter reset." << std::endl;
+    EUDAQ_INFO(string("Configured pin " + std::to_string(m_reset_pin) + " as trigger counter reset."));
+    // Set pin mode to output:
+    pinMode(m_reset_pin, OUTPUT);
+
+
+    // Initialize DHT22 measurement:
+    while (dhtEvent.empty()) {
+      readDHT22();
+      eudaq::mSleep(500);
+    }
+    EUDAQ_INFO(string("Validated DHT22 sensor reading."));
+
     SetStatus(eudaq::Status::LVL_OK, "Configured (" + config.Name() + ")");
   } catch (...) {
     EUDAQ_ERROR(string("Unknown exception."));
@@ -158,9 +194,14 @@ void RPiProducer::OnStartRun(unsigned runnumber) {
     // Send the event out:
     SendEvent(bore);
 
+    // Reset the ripple counter:
+    digitalWrite(m_reset_pin,1);
+    delayMicroseconds(100);
+    digitalWrite(m_reset_pin,0);
+    
     // Enable interrupt:
-    int code = wiringPiISR(m_trigger_pin,INT_EDGE_RISING,&interrupthandler);
-    EUDAQ_INFO(string("Enabled trigger interrupt for pin " + std::to_string(m_trigger_pin)));  
+    int code = wiringPiISR(m_trigger_pin,INT_EDGE_FALLING,&interrupthandler);
+    EUDAQ_INFO(string("Enabled trigger interrupt for pin " + std::to_string(m_trigger_pin)) + " (falling edge)");  
 
     m_running = true;
     SetStatus(eudaq::Status::LVL_OK, "Running");
@@ -181,6 +222,13 @@ void RPiProducer::OnStopRun() {
     m_running = false;
     std::lock_guard<std::mutex> lck(m_mutex);
 
+    // Read the counter:
+    int remainder = 0;
+    for(int i = 0; i < m_hef2020b_pins.size(); i++) {
+      remainder |= digitalRead(m_hef2020b_pins.at(i)) << i;
+    }
+    std::cout << "Remainder: " << remainder << std::endl;
+    
     while(m_trigger_stack > 0) {
       // Prepare event before locking:
       eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
@@ -227,13 +275,16 @@ void RPiProducer::ReadoutLoop() {
 
     // Send out events:
     while(m_trigger_stack > 0) {
+
       // Prepare event before locking:
       eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
       
-      // Ship event with the latest sample:
+      // Fill the event with the latest sample:
       ev.AddBlock(0, reinterpret_cast<const char *>(&dhtEvent[0]),
 		  sizeof(dhtEvent[0]) * dhtEvent.size());
-      SendEvent(ev);
+
+      // Send the event 2^n_pins times (interrupt is on MSB of the ripple counter):
+      for(int i = 0; i < (1 << m_hef2020b_pins.size()); i++) { SendEvent(ev); }
 
       // Lock stack and decrement:
       std::lock_guard<std::mutex> lck(m_mutex);

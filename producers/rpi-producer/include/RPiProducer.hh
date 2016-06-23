@@ -39,7 +39,6 @@ private:
   unsigned m_run, m_ev;
   bool m_terminated, m_running;
 
-  int m_trigger_pin;
   int m_dht22_pin;
   int m_dht22_threshold;
   unsigned m_sampling_freq;

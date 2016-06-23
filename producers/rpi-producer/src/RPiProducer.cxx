@@ -112,7 +112,7 @@ void RPiProducer::readDHT22() {
 
 RPiProducer::RPiProducer(const std::string &name,
 			 const std::string &runcontrol)
-  : eudaq::Producer(name, runcontrol), m_run(0), m_ev(0), m_running(false), m_terminated(false), m_name(name), m_trigger_pin(13), m_dht22_pin(2), m_dht22_threshold(25), m_sampling_freq(10), m_hef2020b_pins(), m_reset_pin(21), dhtEvent() {
+  : eudaq::Producer(name, runcontrol), m_run(0), m_ev(0), m_running(false), m_terminated(false), m_name(name), m_dht22_pin(2), m_dht22_threshold(25), m_sampling_freq(10), m_hef2020b_pins(), m_reset_pin(21), dhtEvent() {
   if(wiringPiSetupGpio() == -1) {
     std::cout << "WiringPi could not be set up" << std::endl;
     throw eudaq::LoggedException("WiringPi could not be set up");
@@ -127,16 +127,12 @@ void RPiProducer::OnConfigure(const eudaq::Configuration &config) {
   try {
     std::cout << "Configuring: " << config.Name() << std::endl;
 
-    // Read and store configured pin from eudaq config:
-    m_trigger_pin = config.Get("trigger_pin", 13);
-    std::cout << m_name << ": Configured pin " << std::to_string(m_trigger_pin) << " as trigger input." << std::endl;
-    EUDAQ_INFO(string("Configured pin " + std::to_string(m_trigger_pin) + " as trigger input."));
-
+    // Read and store configured pins from eudaq config:
     m_dht22_pin = config.Get("dht22_pin", 2);
     std::cout << m_name << ": Configured pin " << std::to_string(m_dht22_pin) << " as DHT22 input." << std::endl;
     EUDAQ_INFO(string("Configured pin " + std::to_string(m_dht22_pin) + " as DHT22 input."));
     // Set pin mode to input:
-    pinMode(m_trigger_pin, INPUT);
+    pinMode(m_dht22_pin, INPUT);
 
     // Store temperature sampling frequency in Hz:
     m_sampling_freq = config.Get("sampling_freq", 10);
@@ -204,8 +200,8 @@ void RPiProducer::OnStartRun(unsigned runnumber) {
     digitalWrite(m_reset_pin,0);
     
     // Enable interrupt:
-    int code = wiringPiISR(m_trigger_pin,INT_EDGE_FALLING,&interrupthandler);
-    EUDAQ_INFO(string("Enabled trigger interrupt for pin " + std::to_string(m_trigger_pin)) + " (falling edge)");  
+    int code = wiringPiISR(m_hef2020b_pins.back(),INT_EDGE_FALLING,&interrupthandler);
+    EUDAQ_INFO(string("Enabled trigger interrupt for pin " + std::to_string(m_hef2020b_pins.back()) + " (falling edge)"));  
 
     m_running = true;
     SetStatus(eudaq::Status::LVL_OK, "Running");
@@ -227,8 +223,6 @@ void RPiProducer::OnStopRun() {
     eudaq::mSleep(4000);
 
     // FIXME disable interrupt!
-    pinMode(m_trigger_pin, OUTPUT);
-    EUDAQ_INFO(string("Disable trigger interrupt on pin " + std::to_string(m_trigger_pin)));
     
     m_running = false;
     std::lock_guard<std::mutex> lck(m_mutex);

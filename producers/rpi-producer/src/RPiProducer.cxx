@@ -239,8 +239,10 @@ void RPiProducer::OnStopRun() {
       remainder |= digitalRead(m_hef2020b_pins.at(i)) << i;
     }
     std::cout << "Remainder: " << remainder << std::endl;
+    // FIXME handle remainder!
     
-    while(m_ev < m_trigger_stack) {
+    while(m_trigger_stack > 0) {
+      
       // Prepare event before locking:
       eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
 
@@ -289,16 +291,18 @@ void RPiProducer::ReadoutLoop() {
     readDHT22();
 
     // Send out events:
-    while(m_ev < m_trigger_stack) {
-      // Prepare event before locking:
-      eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
-      
-      // Fill the event with the latest sample:
-      ev.AddBlock(0, reinterpret_cast<const char *>(&dhtEvent[0]),
-		  sizeof(dhtEvent[0]) * dhtEvent.size());
+    while(m_trigger_stack > 0) {
 
       // Send the event 2^n_pins times (interrupt is on MSB of the ripple counter):
-      for(int i = 0; i < (1 << m_hef2020b_pins.size()); i++) { SendEvent(ev); }
+      for(int i = 0; i < (1 << m_hef2020b_pins.size()); i++) {
+	// Prepare event before locking:
+	eudaq::RawDataEvent ev("RPIDHT22", m_run, m_ev++);
+      
+	// Fill the event with the latest sample:
+	ev.AddBlock(0, reinterpret_cast<const char *>(&dhtEvent[0]),
+		    sizeof(dhtEvent[0]) * dhtEvent.size());
+	SendEvent(ev);
+      }
 
       // Lock stack and decrement:
       std::lock_guard<std::mutex> lck(m_mutex);

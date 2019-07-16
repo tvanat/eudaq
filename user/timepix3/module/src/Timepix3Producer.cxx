@@ -300,8 +300,9 @@ void Timepix3Producer::DoInitialise() {
   } else if (errstat) {
     EUDAQ_ERROR("reset not complete, error code: 0x" + to_hex_string(errstat));
   } else {
-    EUDAQ_EXTRA("reset: OK" );
+    EUDAQ_EXTRA("reset: OK (0x"  + to_hex_string(errstat) + ")");
   }
+
 
   // Are we connected to the SPIDR?
   if (!spidrctrl->isConnected()) {
@@ -349,6 +350,52 @@ void Timepix3Producer::DoInitialise() {
     m_active_devices = 1;
   }
 
+  if (!spidrctrl->setExtRefClk(false)) {
+    EUDAQ_ERROR("setExtRefClk: " + spidrctrl->errorString());
+    serious_error = true;
+  } else {
+    EUDAQ_INFO("setExtRefClk = false // for init stage only");
+  }
+
+  // Resets All connected Timepix3 Devices
+  if( !spidrctrl->reinitDevices() ) {
+    EUDAQ_ERROR("reinitDevices: " + spidrctrl->errorString());
+    serious_error = true;
+  } else {
+    EUDAQ_DEBUG("reinitDevices: OK" );
+  }
+
+  for (int device_nr=0; device_nr<m_active_devices; device_nr++){
+    EUDAQ_INFO("Initializing device " + std::to_string(device_nr));
+
+    int pllcfgval = 0x0000011e;
+    int outblockcfgval = 0x00007bff;
+    if ( !spidrctrl->setOutBlockConfig( device_nr, outblockcfgval ) ) {
+      EUDAQ_ERROR("setOutBlockConfig: " + spidrctrl->errorString());
+      serious_error = true;
+    } else {
+      int readval = -1;
+      spidrctrl->getOutBlockConfig( device_nr, &readval );
+      if (outblockcfgval == readval) {
+        EUDAQ_INFO("Output Block Config register was successfully set to 0x" + to_hex_string(readval, 4) );
+      } else {
+        EUDAQ_ERROR("Output Block Config register was set to 0x" + to_hex_string(outblockcfgval, 4) + " but readback value was 0x"  + to_hex_string(readval, 4) );
+      }
+    }
+    if ( !spidrctrl->setPllConfig( device_nr, pllcfgval ) ) {
+      EUDAQ_ERROR("setPllConfig: " + spidrctrl->errorString());
+      serious_error = true;
+    } else {
+      int readval = -1;
+      spidrctrl->getPllConfig( device_nr, &readval );
+      if (pllcfgval == readval) {
+        EUDAQ_INFO("PLL Config register was successfully set to 0x" + to_hex_string(readval, 4) );
+      } else {
+        EUDAQ_ERROR("PLL Config register was set to 0x" + to_hex_string(pllcfgval, 4) + " but readback value was 0x"  + to_hex_string(readval, 4) );
+      }
+    }
+  }
+
   if (serious_error) {
     EUDAQ_THROW("Timepix3Producer: There were major errors during initialization. See the log.");
     return;
@@ -393,7 +440,7 @@ void Timepix3Producer::DoConfigure() {
   // but leave the option to configure it
   m_extT0 = config->Get("external_t0", m_extRefClk);
   EUDAQ_INFO("external_T0 = " + (m_extT0 ? std::string("true") : std::string("false")));
-
+/*
   // Resets All connected Timepix3 Devices
   if( !spidrctrl->reinitDevices() ) {
     EUDAQ_ERROR("reinitDevices: " + spidrctrl->errorString());
@@ -401,16 +448,45 @@ void Timepix3Producer::DoConfigure() {
   } else {
     EUDAQ_DEBUG("reinitDevices: OK" );
   }
-
+*/
   for (int device_nr=0; device_nr<m_active_devices; device_nr++){
     EUDAQ_INFO("Configuring device " + std::to_string(device_nr));
 
+/*
+    int pllcfgval = 0x0000011e;
+    int outblockcfgval = 0x00007bff;
+    if ( !spidrctrl->setPllConfig( device_nr, pllcfgval ) ) {
+      EUDAQ_ERROR("setPllConfig: " + spidrctrl->errorString());
+      serious_error = true;
+    } else {
+      int readval = -1;
+      spidrctrl->getPllConfig( device_nr, &readval );
+      if (pllcfgval == readval) {
+        EUDAQ_INFO("PLL Config register was successfully set to 0x" + to_hex_string(readval, 4) );
+      } else {
+        EUDAQ_ERROR("PLL Config register was set to 0x" + to_hex_string(pllcfgval, 4) + " but readback value was 0x"  + to_hex_string(readval, 4) );
+      }
+    }
+    if ( !spidrctrl->setOutBlockConfig( device_nr, outblockcfgval ) ) {
+      EUDAQ_ERROR("setOutBlockConfig: " + spidrctrl->errorString());
+      serious_error = true;
+    } else {
+      int readval = -1;
+      spidrctrl->getOutBlockConfig( device_nr, &readval );
+      if (outblockcfgval == readval) {
+        EUDAQ_INFO("Output Block Config register was successfully set to 0x" + to_hex_string(readval, 4) );
+      } else {
+        EUDAQ_ERROR("Output Block Config register was set to 0x" + to_hex_string(outblockcfgval, 4) + " but readback value was 0x"  + to_hex_string(readval, 4) );
+      }
+    }
+*/
+/*
     //Due to timing issue, set readout speed at 320 Mbps
-    if( !spidrctrl->setReadoutSpeed( device_nr, 320) ) {
+    if( !spidrctrl->setReadoutSpeed(device_nr, 320) ) {
       EUDAQ_ERROR("setReadoutSpeed: " + spidrctrl->errorString());
       serious_error = true;
     } else {
-      EUDAQ_DEBUG("setReadoutSpeed = 320");
+      EUDAQ_DEBUG("setReadoutSpeed = 80");
     }
 
     // set output mask
@@ -420,7 +496,7 @@ void Timepix3Producer::DoConfigure() {
     } else {
       EUDAQ_DEBUG("setOutputMask = 0xFF");
     }
-
+*/
     // set destination (DAQ PC) IP address
     std::string default_daqIP = m_spidrIP;
     while ( default_daqIP.back()!='.' && !default_daqIP.empty() ) {
@@ -566,6 +642,7 @@ void Timepix3Producer::DoConfigure() {
           }
         }
       }
+      /*
       else if( name == "PllConfig" ) {
         if ( !spidrctrl->setPllConfig( device_nr, val ) ) {
           EUDAQ_ERROR("setPllConfig: " + spidrctrl->errorString());
@@ -594,6 +671,7 @@ void Timepix3Producer::DoConfigure() {
           }
         }
       }
+      */
     }
 
     // Threshold
